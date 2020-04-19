@@ -1,0 +1,12 @@
+{
+  "DOCKER_API": {
+    "IP": "192.168.50.10",
+    "PORT": "5555"
+  },
+  "ARTIFACTS": {
+    "BASE_URL": "./artifacts/{}",
+    "EXECUTABLE_PATH": "BASE_PATH/executables/",
+    "DIFF_FILES_PATH": "BASE_PATH/diff_files/",
+    "LOG_JOURNALD_SERVICE": "TRUE"
+  }
+}
