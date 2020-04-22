@@ -11,7 +11,7 @@ def main():
         exit(0)
 
     dc.get_container_lowlevel_info('dfd1f6b4b461')
-    #dc.get_network_details()
+    ##dc.get_network_details()
 
 if __name__ == "__main__":
     main()
