@@ -13,6 +13,7 @@ DOCKER_IMAGE_INFO = "http://{}:{}/images/{}/json"
 DOCKER_IMAGE_HISTORY = "http://{}:{}/images/{}/history"
 DOCKER_EXEC_INSPECT = "http://{}:{}/exec/{}/json"
 DOCKER_NETWORK_INSPECT = "http://{}:{}/networks/{}"
+DOCKER_CONTAINER_LIST = "http://{}:{}/containers/json"
 
 
 class Docapi():
@@ -282,3 +283,20 @@ class Docapi():
         except Exception as e:
             print(e)
             return False
+        return True
+
+    def list_containers(self):
+        """ To list all the container that are running the system
+        Return:
+
+        """
+        try:
+            req = DOCKER_CONTAINER_LIST.format(self.ip, self.port)
+            r = requests.get(req)
+            output = r.json()
+            print("Container name\t Container_ID")
+            print("--------------   ------------")
+            for container_id in output:
+                print(container_id['Id'][:12],"\t",container_id['Names'][0][1:])
+        except Exception as e:
+            print(e)
