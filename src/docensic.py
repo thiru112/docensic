@@ -1,14 +1,17 @@
 #!/usr/bin/python3
 from api.docapi import Docapi
-from argsparser import argsparser
+from argumentparser.argsparser import argsparser
 
 def main():
     argsparser.parse_args()
     
     dc = Docapi()
 
-    dc.load_config()
+    if not dc.load_config():
+        exit(0)
 
+    dc.get_container_lowlevel_info('dfd1f6b4b461')
+    #dc.get_network_details()
 
 if __name__ == "__main__":
     main()

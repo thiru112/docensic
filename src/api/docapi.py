@@ -1,9 +1,18 @@
+#!/usr/bin/python3
 import requests
 import os
 import json
 
 DOCKER_CONTAINER_TOP = "http://{}:{}/containers/{}/top"
 DOCKER_CONTAINER_INSPECT = "http://{}:{}/containers/{}/json"
+DOCKER_CONTAINER_FILE_SYSTEM_CHANGES = "http://{}:{}/containers/{}/changes"
+DOCKER_CONTIANER_LOGS = "http://{}:{}/containers/{}/logs?stdout=true&stderr=true&timestamps=true"
+DOCKER_CONTAINER_EXPORT = "http://{}:{}/containers/{}/export"
+DOCKER_CONTAINER_COMMIT = "http://{}:{}/commit?container={}&repo=Forensic&tag=copy&author=investigation_copy&pause=true"
+DOCKER_IMAGE_INFO = "http://{}:{}/images/{}/json"
+DOCKER_IMAGE_HISTORY = "http://{}:{}/images/{}/history"
+DOCKER_EXEC_INSPECT = "http://{}:{}/exec/{}/json"
+DOCKER_NETWORK_INSPECT = "http://{}:{}/networks/{}"
 
 
 class Docapi():
@@ -13,8 +22,11 @@ class Docapi():
         self.ip = ""
         self.port = ""
         self.artifacts_path = ""
-        self.executable_path = ""
+        self.tar_path = ""
         self.container_id = ""
+        self.image_id = ""
+        self.exec_id = ""
+        self.network_id = ""
 
     @staticmethod
     def chech_privilege():
@@ -43,21 +55,21 @@ class Docapi():
 
         self.ip = config['DOCKER_API']['IP']
         self.port = config['DOCKER_API']['PORT']
+        self.artifacts_path = config['ARTIFACTS']['BASE_PATH']
+        self.tar_path = config['ARTIFACTS']['TAR_PATH']
         return True
 
-    def get_container_process_info(self, container_id):
+    def get_container_process_info(self):
         """ To get details of the process that running inside the container
-        Args:
-            container_id (str): container id to be inspected
+
         Returns
             bool: True if successful, False otherwise.
         """
         try:
             req_url = DOCKER_CONTAINER_TOP.format(
-                self.ip, self.port, container_id)
+                self.ip, self.port, self.container_id)
             r = requests.get(req_url)
             output = r.json()
-            self.container_id = output[0]['Id']
             print(output)
         except Exception as e:
             print(e)
@@ -76,7 +88,197 @@ class Docapi():
             req_url = DOCKER_CONTAINER_INSPECT.format(
                 self.ip, self.port, container_id)
             r = requests.get(req_url)
+            output = r.json()
+            self.container_id = output['Id']
+            self.exec_id = output['ExecIDs']
+            self.network_id = list(output['NetworkSettings']['Networks'])
+            self.artifacts_path = self.artifacts_path.format(self.container_id)
+            self.tar_path = self.tar_path.replace(
+                'BASE_PATH', self.artifacts_path)
+        except Exception as e:
+            print(e)
+            return False
+        return True
+
+    def get_container_file_system_changes(self):
+        """ To know what are the files that are changed in container filesystem
+
+        Return:
+            bool: True if info is extracted, otherwise false
+        """
+        try:
+            req = DOCKER_CONTAINER_FILE_SYSTEM_CHANGES.format(
+                self.ip, self.port, self.container_id)
+            r = requests.get(req)
+            output = r.json()
+            print(output)
+        except Exception as e:
+            print(e)
+            return False
+
+        return True
+
+    def get_container_logs(self):
+        """ To get container logs
+
+        Return:
+            bool: True if success, else false
+        """
+        try:
+            req = DOCKER_CONTIANER_LOGS.format(
+                self.ip, self.port, self.container_id)
+            r = requests.get(req)
+            output = r.text()
+            print(output)
+        except Exception as e:
+            print(e)
+            return False
+        return True
+
+    def export_container_as_tarball(self):
+        """ To get container as tarball image
+
+        Return:
+            bool: True if success, else false
+        """
+        try:
+            req = DOCKER_CONTAINER_EXPORT.format(
+                self.ip, self.port, self.container_id)
+            r = requests.get(req)
             print(r)
         except Exception as e:
             print(e)
+            return False
+        return True
+
+    def container_to_image_commit(self):
+        """ To commit a running container image
+
+        Return:
+            bool: True if success, else false
+        """
+
+        try:
+            req = DOCKER_CONTAINER_COMMIT.format(
+                self.ip, self.port, self.container_id)
+            r = requests.post(req)
+            output = r.json()
+            print(output)
+        except Exception as e:
+            print(e)
+            return False
+        return True
+
+    def get_image_corresponding_container(self):
+        """ To get image info  for the corresponding container_id
+
+        Return:
+            bool: True if success, else false
+        """
+
+        try:
+            req = DOCKER_IMAGE_INFO.format(self.ip, self.port, self.image_id)
+            r = requests.get(req)
+            output = r.json()
+            print(output)
+        except Exception as e:
+            print(e)
+
+    def get_image_history(self):
+        """ To get the commands given in the corresponding image information,
+            such as commands in the image
+
+        Return:
+            bool: True if success, else false
+        """
+
+        try:
+            req = DOCKER_IMAGE_HISTORY.format(
+                self.ip, self.port, self.image_id)
+            r = requests.get(req)
+            output = r.json()
+            print(output)
+        except Exception as e:
+            print(e)
+            return False
+        return True
+
+    def get_exec_info_for_contianer(self):
+        """ To get the exec instance associated with the container
+
+        Return:
+            bool: True if success, else false        
+        """
+
+        try:
+            if self.exec_id is not None:
+                for exec_ids in self.exec_id:
+                    req = DOCKER_EXEC_INSPECT.format(
+                        self.ip, self.port, exec_ids)
+                    r = requests.get(req)
+                    output = r.json()
+                    print(output)
+        except Exception as e:
+            print(e)
+            return False
+
+        return True
+
+    def get_network_details(self):
+        """ To get network details corresponding a container
+
+        Return:
+            bool: True is success, else false
+        """
+
+        try:
+            if self.network_id is not None:
+                for network_ids in self.network_id:
+                    req = DOCKER_NETWORK_INSPECT.format(
+                        self.ip, self.port, network_ids)
+                    r = requests.get(req)
+                    output = r.json()
+                    print(output)
+        except Exception as e:
+            print(e)
             False
+        True
+
+    def mkdir(self):
+        """ To create directories to store the artifacts for each containers and subfolders
+
+        Return:
+            bool: True is success, else false
+        """
+        try:
+            for path in [self.artifacts_path, self.tar_path]:
+                if not os.path.exists(path):
+                    try:
+                        os.makedirs(path, mode=0o700)
+                    except FileExistsError as e:
+                        print("Directory already exists:", e)
+        except Exception as e:
+            print(e)
+            return False
+
+        return True
+
+    def save_as_json_file(self, file_name, file_contents):
+        """ To save the output in json file format for further investigation
+
+        Parameter:
+            file_name: string - Gets file name that need to be created
+            file_contents: json - Contents that need to be stored in the file
+        Returns:
+            bool: True if able to create file, else false
+        """
+        file_name_complete_path = self.artifacts_path + '/' + file_name + '.json'
+        try:
+            with open(file_name_complete_path, 'w') as fi:
+                json.dump(file_contents, fi, indent=4)
+        except FileExistsError as fe:
+            print("The file exists ",fe)
+            return False
+        except Exception as e:
+            print(e)
+            return False

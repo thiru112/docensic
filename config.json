@@ -4,9 +4,10 @@
     "PORT": "5555"
   },
   "ARTIFACTS": {
-    "BASE_URL": "./artifacts/{}",
+    "BASE_PATH": "./artifacts/{}",
     "EXECUTABLE_PATH": "BASE_PATH/executables/",
     "DIFF_FILES_PATH": "BASE_PATH/diff_files/",
+    "TAR_PATH":"BASE_PATH/container_tarball",
     "LOG_JOURNALD_SERVICE": "TRUE"
   }
 }
