@@ -43,6 +43,14 @@ Inspect a network for a corresponding container and get the mac and ip addresss 
 network to which it was connected, and all the container that was connected to the network ID [#DONE]
 
 
+OTHER_ARTIFACTS
+===============
+
+Extracting other artifacts such as VOLUME data, /etc/passwd and others [`IN_PROCESS`]
+
+`http://localhost:5555/containers/mysql01/archive?path=/var/lib/mysql`
+
+
 MISC
 =====
-Check what is sandbox_id, Endpoint ID and also about docker volumes [`MISC_TAKE_A_LOOK`]
+Check what is sandbox_id, Endpoint ID and also about docker volumes [`NOT_GONNA_WORK`]

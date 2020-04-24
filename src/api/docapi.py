@@ -14,6 +14,7 @@ DOCKER_IMAGE_HISTORY = "http://{}:{}/images/{}/history"
 DOCKER_EXEC_INSPECT = "http://{}:{}/exec/{}/json"
 DOCKER_NETWORK_INSPECT = "http://{}:{}/networks/{}"
 DOCKER_CONTAINER_LIST = "http://{}:{}/containers/json"
+DOCKER_CONTAINER_EXTRACT_DATA = "http://{}:{}/containers/{}/archive?path={}"
 
 
 class Docapi():
@@ -28,6 +29,8 @@ class Docapi():
         self.image_id = ""
         self.exec_id = ""
         self.network_id = ""
+        self.mount_points = []
+        self.volume_path = ""
 
     @staticmethod
     def chech_privilege():
@@ -58,6 +61,7 @@ class Docapi():
         self.port = config['DOCKER_API']['PORT']
         self.artifacts_path = config['ARTIFACTS']['BASE_PATH']
         self.tar_path = config['ARTIFACTS']['TAR_PATH']
+        self.volume_path = config['ARTIFACTS']['VOLUME_DATA_PATH']
         return True
 
     def get_container_process_info(self):
@@ -71,7 +75,7 @@ class Docapi():
                 self.ip, self.port, self.container_id)
             r = requests.get(req_url)
             output = r.json()
-            print(output)
+            self.save_as_json_file("container_process_info", output)
         except Exception as e:
             print(e)
             return False
@@ -96,6 +100,14 @@ class Docapi():
             self.artifacts_path = self.artifacts_path.format(self.container_id)
             self.tar_path = self.tar_path.replace(
                 'BASE_PATH', self.artifacts_path)
+            self.volume_path = self.volume_path.replace(
+                'BASE_PATH', self.artifacts_path)
+            all_mount_points = output['Mounts']
+            for i in all_mount_points:
+                self.mount_points.append(i['Destination'])
+            self.mkdir()
+            print(self.mount_points)
+            self.save_as_json_file("container_low_level_inspect", output)
         except Exception as e:
             print(e)
             return False
@@ -112,7 +124,7 @@ class Docapi():
                 self.ip, self.port, self.container_id)
             r = requests.get(req)
             output = r.json()
-            print(output)
+            self.save_as_json_file("container_file_sytem_changes", output)
         except Exception as e:
             print(e)
             return False
@@ -130,7 +142,7 @@ class Docapi():
                 self.ip, self.port, self.container_id)
             r = requests.get(req)
             output = r.text()
-            print(output)
+            self.save_as_json_file("container_logs", output)
         except Exception as e:
             print(e)
             return False
@@ -181,7 +193,7 @@ class Docapi():
             req = DOCKER_IMAGE_INFO.format(self.ip, self.port, self.image_id)
             r = requests.get(req)
             output = r.json()
-            print(output)
+            self.save_as_json_file("image_details_of_the_container", output)
         except Exception as e:
             print(e)
 
@@ -198,7 +210,7 @@ class Docapi():
                 self.ip, self.port, self.image_id)
             r = requests.get(req)
             output = r.json()
-            print(output)
+            self.save_as_json_file("image_history", output)
         except Exception as e:
             print(e)
             return False
@@ -218,7 +230,7 @@ class Docapi():
                         self.ip, self.port, exec_ids)
                     r = requests.get(req)
                     output = r.json()
-                    print(output)
+                    self.save_as_json_file("exec_session_list", output)
         except Exception as e:
             print(e)
             return False
@@ -239,11 +251,35 @@ class Docapi():
                         self.ip, self.port, network_ids)
                     r = requests.get(req)
                     output = r.json()
-                    print(output)
+                    self.save_as_json_file("container_network_details", output)
         except Exception as e:
             print(e)
-            False
-        True
+            return False
+        return True
+
+    def extract_volume_data(self):
+        """ To extract all the volume data, passwd that are in the container
+
+        Returns:
+            bool: True if able to extract data, false otherwise
+        """
+        try:
+            for i in self.mount_points:
+                req = DOCKER_CONTAINER_EXTRACT_DATA.format(
+                    self.ip, self.port, self.container_id, i)
+                r = requests.get(req, stream=True)
+                tar_path = self.volume_path + '/' + \
+                    i.replace('/', '_') + '.tar'
+                if r.status_code == 200:
+                    try:
+                        with open(tar_path, 'wb') as tf:
+                            tf.write(r.raw.read())
+                    except FileExistsError as fe:
+                        print(fe)
+        except Exception as e:
+            print(e)
+            return False
+        return True
 
     def mkdir(self):
         """ To create directories to store the artifacts for each containers and subfolders
@@ -252,7 +288,7 @@ class Docapi():
             bool: True is success, else false
         """
         try:
-            for path in [self.artifacts_path, self.tar_path]:
+            for path in [self.artifacts_path, self.tar_path, self.volume_path]:
                 if not os.path.exists(path):
                     try:
                         os.makedirs(path, mode=0o700)
@@ -278,7 +314,7 @@ class Docapi():
             with open(file_name_complete_path, 'w') as fi:
                 json.dump(file_contents, fi, indent=4)
         except FileExistsError as fe:
-            print("The file exists ",fe)
+            print("The file exists ", fe)
             return False
         except Exception as e:
             print(e)
@@ -297,6 +333,7 @@ class Docapi():
             print("Container name\t Container_ID")
             print("--------------   ------------")
             for container_id in output:
-                print(container_id['Id'][:12],"\t",container_id['Names'][0][1:])
+                print(container_id['Id'][:12], "\t",
+                      container_id['Names'][0][1:])
         except Exception as e:
             print(e)

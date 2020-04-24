@@ -10,7 +10,7 @@ def main():
     if not dc.load_config():
         exit(0)
 
-    dc.get_container_lowlevel_info('dfd1f6b4b461')
+    dc.get_container_lowlevel_info('mysql01')
 
 if __name__ == "__main__":
     main()

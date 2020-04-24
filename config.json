@@ -1,12 +1,12 @@
 {
   "DOCKER_API": {
-    "IP": "192.168.50.10",
+    "IP": "localhost",
     "PORT": "5555"
   },
   "ARTIFACTS": {
     "BASE_PATH": "./artifacts/{}",
     "EXECUTABLE_PATH": "BASE_PATH/executables/",
-    "DIFF_FILES_PATH": "BASE_PATH/diff_files/",
+    "VOLUME_DATA_PATH": "BASE_PATH/volume_data/",
     "TAR_PATH":"BASE_PATH/container_tarball",
     "LOG_JOURNALD_SERVICE": "TRUE"
   }
