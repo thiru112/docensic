@@ -9,12 +9,11 @@ argsparser = ArgumentParser(prog='Docensic',
 container_group = argsparser.add_mutually_exclusive_group(required=True)
 
 # To list all the running containers in the target
-argsparser.add_argument('-ls', '--list_contianers', type=str,
-                        nargs='+', action='store',
-                        help='To list all the contianer in the system')
+container_group.add_argument('-ls', '--list_containers', action="store_true",
+                        help='To list all the container in the system')
 
 # To get artifacts for a single container by passing a container_id
-container_group.add_argument('-ci', '--container_id', type=str,
+container_group.add_argument('-c', '--container_id', type=str,
                             nargs=1, action='store',
                             help='To get artifacts for a partical container')
 
@@ -24,10 +23,10 @@ container_group.add_argument('-li', '--list_id', type=str,
                             help='Find a artifacts for list of containers')
 
 # To get artifacts from images
-argsparser.add_argument('-i', '--images', type=str,
+container_group.add_argument('-i', '--images', type=str,
                         nargs='+', action='store',
                         help='To get articats from the container images')
 
 # To display the version of this tool
-argsparser.add_argument('-v', '--version', action='store_true',
+container_group.add_argument('-v', '--version', action='store_true',
                         help='Display version of the tool')

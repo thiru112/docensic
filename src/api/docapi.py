@@ -106,7 +106,6 @@ class Docapi():
             for i in all_mount_points:
                 self.mount_points.append(i['Destination'])
             self.mkdir()
-            print(self.mount_points)
             self.save_as_json_file("container_low_level_inspect", output)
         except Exception as e:
             print(e)
@@ -141,8 +140,14 @@ class Docapi():
             req = DOCKER_CONTIANER_LOGS.format(
                 self.ip, self.port, self.container_id)
             r = requests.get(req)
-            output = r.text()
-            self.save_as_json_file("container_logs", output)
+            output = r.text
+            log_complete_path = self.artifacts_path + '/container_log_data.log'
+            try:
+                with open(log_complete_path, 'w') as logwr:
+                    logwr.write(output)
+            except FileExistsError as fe:
+                print(fe)
+                return False
         except Exception as e:
             print(e)
             return False
@@ -157,8 +162,14 @@ class Docapi():
         try:
             req = DOCKER_CONTAINER_EXPORT.format(
                 self.ip, self.port, self.container_id)
-            r = requests.get(req)
-            print(r)
+            r = requests.get(req, stream=True)
+            tar_path_to_write = self.tar_path + '/' + "container_complete.tar"
+            if r.status_code == 200:
+                try:
+                    with open(tar_path_to_write, 'wb') as tar:
+                        tar.write(r.raw.read())
+                except FileExistsError as fe:
+                    print(fe)
         except Exception as e:
             print(e)
             return False
@@ -264,18 +275,19 @@ class Docapi():
             bool: True if able to extract data, false otherwise
         """
         try:
-            for i in self.mount_points:
-                req = DOCKER_CONTAINER_EXTRACT_DATA.format(
-                    self.ip, self.port, self.container_id, i)
-                r = requests.get(req, stream=True)
-                tar_path = self.volume_path + '/' + \
-                    i.replace('/', '_') + '.tar'
-                if r.status_code == 200:
-                    try:
-                        with open(tar_path, 'wb') as tf:
-                            tf.write(r.raw.read())
-                    except FileExistsError as fe:
-                        print(fe)
+            if self.mount_points is not None:
+                for i in self.mount_points:
+                    req = DOCKER_CONTAINER_EXTRACT_DATA.format(
+                        self.ip, self.port, self.container_id, i)
+                    r = requests.get(req, stream=True)
+                    tar_path = self.volume_path + '/' + \
+                        i.replace('/', '_') + '.tar'
+                    if r.status_code == 200:
+                        try:
+                            with open(tar_path, 'wb') as tf:
+                                tf.write(r.raw.read())
+                        except FileExistsError as fe:
+                            print(fe)
         except Exception as e:
             print(e)
             return False
@@ -330,8 +342,8 @@ class Docapi():
             req = DOCKER_CONTAINER_LIST.format(self.ip, self.port)
             r = requests.get(req)
             output = r.json()
-            print("Container name\t Container_ID")
-            print("--------------   ------------")
+            print("Container ID\t Container Name")
+            print("------------     --------------")
             for container_id in output:
                 print(container_id['Id'][:12], "\t",
                       container_id['Names'][0][1:])
