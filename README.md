@@ -12,5 +12,5 @@ Change the `config.json.sample` to `config.json`
 ### To run
 > `root@example:~/dockensic# python3 src/dockensic.py [OPTIONS]`
 
-- #### Don't run the `dockensic.py` from the `src` directoy.
+- #### Don't run the `dockensic.py` from the `src` directory.
 - Because it breaks the script
